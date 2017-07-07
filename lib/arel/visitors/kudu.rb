@@ -2,6 +2,6 @@
 
 module Arel
   module Visitors
-    class Impala < ::Arel::Visitors::ToSql; end
+    class Kudu < ::Arel::Visitors::ToSql; end
   end
 end

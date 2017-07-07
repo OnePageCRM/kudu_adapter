@@ -3,10 +3,12 @@
 module ActiveRecord
   module ConnectionAdapters
     # Main Impala connection adapter class
-    class ImpalaAdapter < ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+    class KuduAdapter < ::ActiveRecord::ConnectionAdapters::AbstractAdapter
+      ADAPTER_NAME = 'Kudu'
+
       def initialize(configuration)
         # TODO: allow extra connnection options
-        self.impala_connection = ::Impala.connect(
+        self.impala_connection = ::Kudu.connect(
           configuration[:host] || '127.0.0.1',
           configuration[:port] || 28_050
         )

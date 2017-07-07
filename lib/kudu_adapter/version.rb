@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-module ImpalaAdapter
+module KuduAdapter
   VERSION = '0.0.1'
 end

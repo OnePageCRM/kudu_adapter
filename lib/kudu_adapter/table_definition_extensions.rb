@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module ImpalaAdapter
-  # Definitions of additional table capabilities in Impala
+module KuduAdapter
+  # Definitions of additional table capabilities in Kudu
   module TableDefinitionExtensions
     # @!attribute [r] partitions
     #  @return [Array] List of table partition definitions

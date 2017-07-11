@@ -4,7 +4,7 @@ require 'simplecov'
 SimpleCov.start
 
 require 'rubygems'
-require 'bundler/setup'
+require 'bundler'
 require 'yaml'
 
 Bundler.setup :default, :development
@@ -113,3 +113,12 @@ DATABASE_USER = config['database']['user'] ||
 DATABASE_PASSWORD = config['database']['password'] ||
                     ENV['DATABASE_PASSWORD'] ||
                     'impala'
+
+CONNECTION_PARAMS = {
+  adapter: 'kudu',
+  database: DATABASE_NAME,
+  host: DATABASE_HOST,
+  port: DATABASE_PORT,
+  username: DATABASE_USER,
+  password: DATABASE_PASSWORD
+}.freeze

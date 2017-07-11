@@ -1,0 +1,8 @@
+# Copy this file to spec/config.yaml and set appropriate values.
+# You can also use environment variables, see spec_helper.rb
+database:
+  name: 'test'
+  host: '127.0.0.1'
+  port: 28050
+  user: 'kudu'
+  password: 'impala'

@@ -4,7 +4,6 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem 'pry'
-gem 'rake'
-gem 'rspec'
-gem 'simplecov'
+group :test do
+  gem 'simplecov', require: false
+end

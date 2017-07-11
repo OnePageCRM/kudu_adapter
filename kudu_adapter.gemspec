@@ -21,9 +21,12 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency('impala', ['~> 0.5.1'])
 
   s.add_development_dependency('bundler')
+  s.add_development_dependency('rake')
+  s.add_development_dependency('rspec')
+  s.add_development_dependency('pry')
   s.add_development_dependency('rubocop')
 
   s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- test/*`.split("\n")
+  s.test_files    = `git ls-files -- spec/*`.split("\n")
   s.require_paths = ['lib']
 end

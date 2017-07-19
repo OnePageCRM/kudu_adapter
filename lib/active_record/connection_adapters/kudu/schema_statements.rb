@@ -34,19 +34,21 @@ module ActiveRecord
         end
 
         def tables
-          raise 'TODO: Implement me'
+          connection.query('SHOW TABLES').map { |table| table[:name] }
         end
 
         def table_exists?(table_name)
-          raise 'TODO: Implement me'
+          tables.include? table_name.to_s
         end
 
+        # Return list of existing views. As we are not supporting them, this list will be always empty
         def views
-          raise 'TODO: Implement me'
+          []
         end
 
-        def view_exists?(view_name)
-          raise 'TODO: Implement me'
+        # Check if given view exists. As we are not supporting views, it'll be always false
+        def view_exists?(_)
+          false
         end
 
         def indexes(table_name, name = nil)
@@ -54,7 +56,7 @@ module ActiveRecord
         end
 
         def index_exists?(table_name, column_name, options = {})
-        raise 'TODO: Implement me'
+          raise 'TODO: Implement me'
         end
 
         def columns(table_name)
@@ -70,6 +72,10 @@ module ActiveRecord
         end
 
         def create_table(table_name, comment: nil, **options)
+          raise 'TODO: Implement me'
+        end
+
+        def drop_table(table_name, options = {})
           raise 'TODO: Implement me'
         end
 
@@ -89,10 +95,9 @@ module ActiveRecord
           raise 'TODO: Implement me'
         end
 
-        def drop_table(table_name, options = {})
-          def add_column(table_name, column_name, type, options = {})
-            raise 'TODO: Implement me'
-          end
+
+        def add_column(table_name, column_name, type, options = {})
+          raise 'TODO: Implement me'
         end
 
         def remove_columns(table_name, column_names)
@@ -193,7 +198,32 @@ module ActiveRecord
         end
 
         def type_to_sql(type, limit: nil, precision: nil, scale: nil, **)
-          raise 'TODO: Implement me'
+          case type
+          when 'integer'
+            case limit
+            when 1 then 'TINYINT'
+            when 2 then 'SMALLINT'
+            when 3..4, nil then 'INT'
+            when 5..8 then 'BIGINT'
+            else
+              raise(ActiveRecordError, 'Invalid integer precision')
+            end
+          when 'decimal'
+            precision ||= 9
+            scale ||= 0
+            raise(ActiveRecordError, 'Invalid precision provided') if
+              precision < 1 || precision > 38
+            raise(ActiveRecordError, 'Invalid scale provided') if
+              scale.negative? || scale > precision
+            "DECIMAL(#{precision},#{scale})"
+          when 'string'
+            limit ||= 256
+            raise(ActiveRecordError, 'Invalid string length provided') if
+              limit < 1 || limit > 65_535
+            limit < 32_768 ? 'STRING' : "VARCHAR(#{limit})"
+          else
+            super
+          end
         end
 
         def columns_for_distinct(columns, orders)

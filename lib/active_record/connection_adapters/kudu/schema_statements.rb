@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require 'active_record/connection_adapters/kudu/schema_creation'
+require 'active_record/connection_adapters/kudu/table_definition'
 require 'active_record/migration/join_table'
 
+# :nodoc:
 module ActiveRecord
   module ConnectionAdapters
     module Kudu
@@ -30,7 +33,7 @@ module ActiveRecord
         end
 
         def data_source_exists?(name)
-          raise 'TODO: Implement me'
+          data_sources.include? name.to_s
         end
 
         def tables
@@ -41,12 +44,14 @@ module ActiveRecord
           tables.include? table_name.to_s
         end
 
-        # Return list of existing views. As we are not supporting them, this list will be always empty
+        # Return list of existing views. As we are not supporting them,
+        # this list will be always empty
         def views
           []
         end
 
-        # Check if given view exists. As we are not supporting views, it'll be always false
+        # Check if given view exists. As we are not supporting views,
+        # it'll be always false
         def view_exists?(_)
           false
         end
@@ -256,6 +261,16 @@ module ActiveRecord
 
         def change_column_comment(table_name, column_name, comment)
           raise 'TODO: Implement me'
+        end
+
+        private
+
+        def schema_creation
+          ::ActiveRecord::ConnectionAdapters::Kudu::SchemaCreation.new(self)
+        end
+
+        def create_table_definition(*args)
+          ::ActiveRecord::ConnectionAdapters::Kudu::TableDefinition.new(*args)
         end
       end
     end

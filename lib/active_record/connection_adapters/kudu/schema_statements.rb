@@ -77,10 +77,46 @@ module ActiveRecord
         end
 
         def create_table(table_name, comment: nil, **options)
-          raise 'TODO: Implement me'
+          td = create_table_definition table_name, options[:temporary], options[:options], options[:as], comment: comment
+
+          if options[:id] != false && !options[:as]
+            pk = options.fetch(:primary_key) do
+              Base.get_primary_key table_name.to_s.singularize
+            end
+
+            if pk.is_a?(Array)
+              td.primary_keys pk
+            else
+              td.primary_key pk, options.fetch(:id, :primary_key), options
+            end
+          end
+
+          yield td if block_given?
+
+          if options[:force]
+            drop_table(table_name, **options, if_exists: true)
+          end
+
+          result = execute schema_creation.accept td
+
+          unless supports_indexes_in_create?
+            td.indexes.each do |column_name, index_options|
+              add_index(table_name, column_name, index_options)
+            end
+          end
+
+          if supports_comments? && !supports_comments_in_create?
+            change_table_comment(table_name, comment) if comment.present?
+
+            td.columns.each do |column|
+              change_column_comment(table_name, column.name, column.comment) if column.comment.present?
+            end
+          end
+
+          result
         end
 
-        def drop_table(table_name, options = {})
+        def drop_table(table_name, **options)
           raise 'TODO: Implement me'
         end
 

@@ -10,6 +10,11 @@ module ActiveRecord
     module Kudu
       include ::ActiveRecord::Migration::JoinTable
 
+      # TODO methods delegate :quote_column_name, :quote_table_name, :quote_default_expression, :type_to_sql,
+      # :options_include_default?, :supports_indexes_in_create?, :supports_foreign_keys_in_create?,
+      # :foreign_key_options, to: :@conn
+      # ^^^ THOSE ARE FROM SCHEMACREATION ^^^
+
       # :nodoc:
       module SchemaStatements
         def native_database_types
@@ -249,19 +254,6 @@ module ActiveRecord
             else
               raise(ActiveRecordError, 'Invalid integer precision')
             end
-          when 'decimal'
-            precision ||= 9
-            scale ||= 0
-            raise(ActiveRecordError, 'Invalid precision provided') if
-              precision < 1 || precision > 38
-            raise(ActiveRecordError, 'Invalid scale provided') if
-              scale.negative? || scale > precision
-            "DECIMAL(#{precision},#{scale})"
-          when 'string'
-            limit ||= 256
-            raise(ActiveRecordError, 'Invalid string length provided') if
-              limit < 1 || limit > 65_535
-            limit < 32_768 ? 'STRING' : "VARCHAR(#{limit})"
           else
             super
           end

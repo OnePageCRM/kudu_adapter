@@ -27,18 +27,17 @@ module ActiveRecord
       attr_reader :connection
 
       NATIVE_DATABASE_TYPES = {
-        tinyint: { name: 'tinyint' }, # 1 byte
-        smallint: { name: 'smallint' }, # 2 bytes
-        integer: { name: 'int' }, # 4 bytes
-        bigint: { name: 'bigint' }, # 8 bytes
-        decimal: { name: 'decimal' }, # TODO precision (1-38), scale
-        float: { name: 'float' },
-        double: { name: 'double' },
-        boolean: { name: 'boolean' },
-        char: { name: 'char', limit: 255 },
-        string: { name: 'string' }, # 32767 characters
-        varchar: { name: 'varchar', limit: 65_535 },
-        time: { name: 'timestamp' }
+        tinyint: { name: 'TINYINT' }, # 1 byte
+        smallint: { name: 'SMALLINT' }, # 2 bytes
+        integer: { name: 'INT' }, # 4 bytes
+        bigint: { name: 'BIGINT' }, # 8 bytes
+        float: { name: 'FLOAT' },
+        double: { name: 'DOUBLE' },
+        boolean: { name: 'BOOLEAN' },
+        char: { name: 'CHAR', limit: 255 },
+        string: { name: 'STRING' }, # 32767 characters
+        time: { name: 'BIGINT' },
+        datetime: { name: 'BIGINT' }
       }.freeze
 
       def initialize(connection, logger, connection_params)
@@ -54,6 +53,11 @@ module ActiveRecord
           @connection_params[:host],
           @connection_params[:port]
         )
+
+        db_names = @connection.query('SHOW DATABASES').map {|db| db[:name]}
+
+        @connection.execute('USE ' + @connection_params[:database]) if
+          @connection_params[:database].present? && db_names.include?(@connection_params[:database])
       end
 
       def disconnect!

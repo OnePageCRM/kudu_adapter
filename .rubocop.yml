@@ -1,6 +1,8 @@
 AllCops:
   TargetRubyVersion: 2.4
+  Exclude:
+    - '**/schema_creation.rb'
 
-Metrics:
-  LineLength:
-    Max: 120
+Metrics/LineLength:
+  Enabled: true
+  Max: 120

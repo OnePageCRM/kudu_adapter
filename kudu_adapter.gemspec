@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.email = 'devteam@onepagecrm.com'
 
   s.add_runtime_dependency('arel', ['~> 8.0'])
+  s.add_runtime_dependency('activemodel', ['~> 5.1.0'])
   s.add_runtime_dependency('activerecord', ['~> 5.1.0'])
   s.add_runtime_dependency('impala', ['~> 0.5.1'])
 

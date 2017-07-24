@@ -24,6 +24,6 @@ module ActiveRecord
       end
     end
 
-    DatabaseTasks.register_task /kudu/, KuduDatabaseTasks
+    DatabaseTasks.register_task(/kudu/, KuduDatabaseTasks)
   end
 end

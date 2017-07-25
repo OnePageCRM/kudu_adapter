@@ -5,6 +5,7 @@ require 'active_record/connection_adapters/abstract/schema_definitions'
 module ActiveRecord
   module ConnectionAdapters
     module Kudu
+      # :nodoc:
       class TableDefinition < ::ActiveRecord::ConnectionAdapters::TableDefinition
         attr_reader :external
         attr_reader :partitions_count

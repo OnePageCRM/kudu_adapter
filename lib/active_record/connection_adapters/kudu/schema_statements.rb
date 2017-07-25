@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'active_record/connection_adapters/kudu/column'
 require 'active_record/connection_adapters/kudu/schema_creation'
+require 'active_record/connection_adapters/kudu/sql_type_metadata'
 require 'active_record/connection_adapters/kudu/table_definition'
 require 'active_record/migration/join_table'
 
@@ -10,7 +12,7 @@ module ActiveRecord
     module Kudu
       include ::ActiveRecord::Migration::JoinTable
 
-      # TODO methods delegate :quote_column_name, :quote_table_name, :quote_default_expression, :type_to_sql,
+      # TODO methods delegate :quote_column_name, :quote_default_expression, :type_to_sql,
       # :options_include_default?, :supports_indexes_in_create?, :supports_foreign_keys_in_create?,
       # :foreign_key_options, to: :@conn
       # ^^^ THOSE ARE FROM SCHEMACREATION ^^^
@@ -70,7 +72,25 @@ module ActiveRecord
         end
 
         def columns(table_name)
-          raise 'TODO: Implement me'
+          quoted = quote_table_name table_name
+          connection.query('DESCRIBE ' + quoted).map do |col_def|
+            type = if col_def[:type] == 'int'
+                     :integer
+                   elsif col_def[:type] == 'bigint' && /_at$/ =~ col_def[:name]
+                     :datetime
+                   else
+                     col_def[:type].to_sym
+                   end
+            stm = ::ActiveRecord::ConnectionAdapters::Kudu::SqlTypeMetadata.new(sql_type: col_def[:type], type: type)
+            ::ActiveRecord::ConnectionAdapters::Kudu::Column.new(
+              col_def[:name],
+              col_def[:default_value]&.empty? ? nil : col_def[:default_value],
+              stm,
+              col_def[:null] == 'true',
+              table_name,
+              col_def[:comment]
+            )
+          end
         end
 
         def column_exists?(table_name, column_name, type = nil, options = {})

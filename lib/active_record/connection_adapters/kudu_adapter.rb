@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'active_record/connection_adapters/kudu/database_statements'
 require 'active_record/connection_adapters/kudu/schema_statements'
 require 'impala'
 require 'kudu_adapter/bind_substitution'
@@ -18,6 +19,7 @@ module ActiveRecord
     # Main Impala connection adapter class
     class KuduAdapter < ::ActiveRecord::ConnectionAdapters::AbstractAdapter
 
+      include Kudu::DatabaseStatements
       include Kudu::SchemaStatements
 
       ADAPTER_NAME = 'Kudu'
@@ -27,6 +29,7 @@ module ActiveRecord
       attr_reader :connection
 
       NATIVE_DATABASE_TYPES = {
+        primary_key: { name: 'INT' },
         tinyint: { name: 'TINYINT' }, # 1 byte
         smallint: { name: 'SMALLINT' }, # 2 bytes
         integer: { name: 'INT' }, # 4 bytes
@@ -89,6 +92,10 @@ module ActiveRecord
             @connection.query sql
           end
         end
+      end
+
+      def quote_table_name(table_name)
+        table_name # TODO
       end
 
       def supports_migrations?

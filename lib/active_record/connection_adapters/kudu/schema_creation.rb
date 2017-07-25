@@ -53,11 +53,7 @@ module ActiveRecord
         end
 
         def add_column_options!(sql, options)
-          if options[:null]
-            sql += ' NULL'
-          else
-            sql += ' NOT NULL'
-          end
+          sql += options[:null] ? ' NULL' : ' NOT NULL'
 
           sql += " ENCODING #{quote_default_expression(options[:encoding])}" if options[:encoding]
           sql += " COMPRSESSION #{quote_default_expression(options[:compression])}" if options[:compression]

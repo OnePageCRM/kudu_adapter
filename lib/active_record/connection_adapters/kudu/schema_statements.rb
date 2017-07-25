@@ -19,16 +19,12 @@ module ActiveRecord
 
       # :nodoc:
       module SchemaStatements
-        def native_database_types
-          raise 'TODO: Implement me'
-        end
-
         def table_options(table_name)
-          raise 'TODO: Implement me'
+          nil # TODO???
         end
 
         def table_comment(table_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (table comment)'
         end
 
         def table_alias_for(table_name)
@@ -64,16 +60,15 @@ module ActiveRecord
         end
 
         def indexes(table_name, name = nil)
-          raise 'TODO: Implement me'
+          [] # TODO? Or mark as not implemented
         end
 
         def index_exists?(table_name, column_name, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (index exists?)'
         end
 
         def columns(table_name)
-          quoted = quote_table_name table_name
-          connection.query('DESCRIBE ' + quoted).map do |col_def|
+          table_structure(table_name).map do |col_def|
             type = if col_def[:type] == 'int'
                      :integer
                    elsif col_def[:type] == 'bigint' && /_at$/ =~ col_def[:name]
@@ -94,11 +89,13 @@ module ActiveRecord
         end
 
         def column_exists?(table_name, column_name, type = nil, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (column exists)'
         end
 
         def primary_key(table_name)
-          raise 'TODO: Implement me'
+          pks = table_structure(table_name).select { |col| col[:primary_key] == 'true' }
+          pks.map! { |pk| pk[:name] }
+          pks.size == 1 ? pks.first : pks
         end
 
         def create_table(table_name, comment: nil, **options)
@@ -118,9 +115,7 @@ module ActiveRecord
 
           yield td if block_given?
 
-          if options[:force]
-            drop_table(table_name, **options, if_exists: true)
-          end
+          options[:force] && drop_table(table_name, **options, if_exists: true)
 
           result = execute schema_creation.accept td
 
@@ -142,125 +137,117 @@ module ActiveRecord
         end
 
         def drop_table(table_name, **options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (drop table)'
         end
 
         def create_join_table(table_1, table_2, colum_options: {}, **options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (create join table)'
         end
 
         def drop_join_table(table_1, table_2, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (drop join table)'
         end
 
         def change_table(table_name, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (change table)'
         end
 
         def rename_table(table_name, new_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (rename table)'
         end
 
 
         def add_column(table_name, column_name, type, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (add column)'
         end
 
         def remove_columns(table_name, column_names)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (remove columns)'
         end
 
         def remove_column(table_name, column_name, type = nil, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (remove column)'
         end
 
         def change_column(table_name, type, options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (change column)'
         end
 
         def change_column_default(table_name, column_name, default_or_changes)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (change column default)'
         end
 
         def change_column_null(table_name, column_name, null, default = nil)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (change column null)'
         end
 
         def rename_column(table_name, column_name, new_column_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (rename column)'
         end
 
         def add_index(table_name, column_name, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (add index)'
         end
 
         def remove_index(table_name, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (remove index)'
         end
 
         def rename_index(table_name, old_name, new_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (rename index)'
         end
 
         def index_name(table_name, options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (index name)'
         end
 
         def index_name_exists?(table_name, index_name, default = nil)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (index name exists)'
         end
 
         def add_reference(table_name, ref_name, **options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (add reference)'
         end
         alias add_belongs_to add_reference
 
         def remove_reference(table_name, ref_name, foreign_key: false, polymorphic: false, **options)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (remove reference)'
         end
 
         def foreign_keys(table_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (foreign keys)'
         end
 
         def add_foreign_key(from_table, to_table, options = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (add foreign key)'
         end
 
-        def remoe_foreign_key(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me'
+        def remove_foreign_key(from_table, options_or_to_table = {})
+          raise 'TODO: Implement me (remove foreign key)'
         end
 
         def foreign_key_exists?(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me (foreign key exists)'
         end
 
         def foreign_key_for(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me foreign_ke_for'
         end
 
         def foreign_key_for!(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me foreign_key_for!'
         end
 
         def foreign_key_for_column_for(table_name)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me foreign_key_for_column_for'
         end
 
         def foreign_key_options(from_table, to_table, options)
-          raise 'TODO: Implement me'
-        end
-
-        def dump_schema_information
-          raise 'TODO: Implement me'
-        end
-
-        def insert_versions_sql(versions)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me foreign_key_options'
         end
 
         def assume_migrated_upto_version(version, migration_paths)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me assume_migrated_upto_version'
         end
 
         def type_to_sql(type, limit: nil, precision: nil, scale: nil, **)
@@ -280,7 +267,7 @@ module ActiveRecord
         end
 
         def columns_for_distinct(columns, orders)
-          raise 'TODO: Implement me'
+          raise 'TODO: Implement me columns_for_distinct'
         end
 
         def add_timestamps(table_name, options = {})
@@ -319,6 +306,11 @@ module ActiveRecord
 
         def create_table_definition(*args)
           ::ActiveRecord::ConnectionAdapters::Kudu::TableDefinition.new(*args)
+        end
+
+        def table_structure(table_name)
+          quoted = quote_table_name table_name
+          connection.query('DESCRIBE ' + quoted)
         end
       end
     end

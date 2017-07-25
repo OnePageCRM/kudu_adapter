@@ -19,6 +19,10 @@ module ActiveRecord
           def deserialize(value)
             ::Time.at value.to_i
           end
+
+          def user_input_in_time_zone(value)
+            value.in_time_zone
+          end
         end
       end
     end

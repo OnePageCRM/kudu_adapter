@@ -23,6 +23,18 @@ module ActiveRecord
           rows = result.map { |row| row.fetch_values(*columns) }
           ::ActiveRecord::Result.new(columns.map(&:to_s), rows)
         end
+
+        def exec_delete(sql, name, binds)
+          # We are not able to return number of affected rows so we will just say that there was some update
+          super
+          1
+        end
+
+        def exec_update(sql, name, binds)
+          # We are not able to return number of affected rows so we will just say that there was some update
+          super
+          1
+        end
       end
     end
   end

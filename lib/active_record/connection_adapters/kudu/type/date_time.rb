@@ -1,23 +1,18 @@
 # frozen_string_literal: true
 
-require 'active_model/type/big_integer'
+require 'active_model/type/helpers/time_value'
+require 'active_record/connection_adapters/kudu/type/time'
 
 module ActiveRecord
   module ConnectionAdapters
     module Kudu
       module Type
+        include ::ActiveModel::Type::Helpers::TimeValue
+
         # :nodoc:
-        class DateTime < ::ActiveModel::Type::BigInteger
+        class DateTime < ::ActiveRecord::ConnectionAdapters::Kudu::Type::Time
           def type
             :datetime
-          end
-
-          def serialize(value)
-            value.to_i
-          end
-
-          def deserialize(value)
-            ::Time.at value.to_i
           end
         end
       end

@@ -2,6 +2,17 @@
 
 require 'active_record/connection_adapters/kudu/database_statements'
 require 'active_record/connection_adapters/kudu/schema_statements'
+require 'active_record/connection_adapters/kudu/type/big_int'
+require 'active_record/connection_adapters/kudu/type/boolean'
+require 'active_record/connection_adapters/kudu/type/char'
+require 'active_record/connection_adapters/kudu/type/date_time'
+require 'active_record/connection_adapters/kudu/type/double'
+require 'active_record/connection_adapters/kudu/type/float'
+require 'active_record/connection_adapters/kudu/type/integer'
+require 'active_record/connection_adapters/kudu/type/small_int'
+require 'active_record/connection_adapters/kudu/type/string'
+require 'active_record/connection_adapters/kudu/type/time'
+require 'active_record/connection_adapters/kudu/type/tiny_int'
 require 'impala'
 require 'kudu_adapter/bind_substitution'
 
@@ -94,6 +105,10 @@ module ActiveRecord
         end
       end
 
+      def lookup_cast_type_from_column(column)
+        lookup_cast_type column.type.to_s
+      end
+
       def quote_table_name(table_name)
         table_name # TODO
       end
@@ -108,6 +123,20 @@ module ActiveRecord
 
       def native_database_types
         ::ActiveRecord::ConnectionAdapters::KuduAdapter::NATIVE_DATABASE_TYPES
+      end
+
+      def initialize_type_map(mapping)
+        mapping.register_type(/bigint/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::BigInt.new)
+        mapping.register_type(/boolean/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Boolean.new)
+        mapping.register_type(/char/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Char.new)
+        mapping.register_type(/datetime/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::DateTime.new)
+        mapping.register_type(/double/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Double.new)
+        mapping.register_type(/float/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Float.new)
+        mapping.register_type(/integer/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Integer.new)
+        mapping.register_type(/smallint/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::SmallInt.new)
+        mapping.register_type(/string/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::String.new)
+        mapping.register_type(/(date){0}time/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::Time.new)
+        mapping.register_type(/tinyint/i, ::ActiveRecord::ConnectionAdapters::Kudu::Type::TinyInt.new)
       end
 
       def with_auto_reconnect

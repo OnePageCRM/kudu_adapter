@@ -17,7 +17,7 @@ module ActiveRecord
           end
 
           def deserialize(value)
-            Time.at value.to_i
+            ::Time.at value.to_i
           end
         end
       end

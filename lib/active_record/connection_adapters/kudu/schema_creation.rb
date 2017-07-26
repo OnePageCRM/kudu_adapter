@@ -5,6 +5,7 @@ require 'active_record/connection_adapters/abstract/schema_creation'
 module ActiveRecord
   module ConnectionAdapters
     module Kudu
+      # :nodoc:
       class SchemaCreation < ::ActiveRecord::ConnectionAdapters::AbstractAdapter::SchemaCreation
 
         private

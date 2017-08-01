@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'active_record/connection_adapters/kudu/database_statements'
 require 'active_record/connection_adapters/kudu/schema_statements'
 require 'active_record/connection_adapters/kudu/type/big_int'
@@ -114,7 +112,7 @@ module ActiveRecord
       end
 
       def quoted_true
-        true.to_s.freeze
+        true.to_s
       end
 
       def unquoted_true
@@ -122,7 +120,7 @@ module ActiveRecord
       end
 
       def quoted_false
-        false.to_s.freeze
+        false.to_s
       end
 
       def unquoted_false

@@ -13,7 +13,7 @@ module ActiveRecord
 
           unless without_prepared_statement? binds
             type_casted_binds(binds).each do |bind|
-              bind = "'#{bind}'" if bind.is_a? ::String # TODO: proper escape
+              bind = quote(bind)
               sql = sql.sub('?', bind.to_s)
             end
           end

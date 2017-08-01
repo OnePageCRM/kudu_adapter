@@ -32,6 +32,7 @@ module ActiveRecord
 
       include Kudu::DatabaseStatements
       include Kudu::SchemaStatements
+      #include Kudu::Quoting
 
       ADAPTER_NAME = 'Kudu'
 
@@ -118,7 +119,7 @@ module ActiveRecord
       end
 
       def unquoted_true
-        quoted_true
+        true
       end
 
       def quoted_false
@@ -126,7 +127,7 @@ module ActiveRecord
       end
 
       def unquoted_false
-        quoted_false
+        false
       end
 
       def supports_migrations?
@@ -167,6 +168,7 @@ module ActiveRecord
         # TODO: escape name
         execute "CREATE DATABASE IF NOT EXISTS `#{database_name}`"
       end
+
     end
   end
 end

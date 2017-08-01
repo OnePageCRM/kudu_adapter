@@ -113,6 +113,22 @@ module ActiveRecord
         table_name # TODO
       end
 
+      def quoted_true
+        true.to_s.freeze
+      end
+
+      def unquoted_true
+        quoted_true
+      end
+
+      def quoted_false
+        false.to_s.freeze
+      end
+
+      def unquoted_false
+        quoted_false
+      end
+
       def supports_migrations?
         true
       end

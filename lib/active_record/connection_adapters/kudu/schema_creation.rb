@@ -54,11 +54,14 @@ module ActiveRecord
         end
 
         def add_column_options!(sql, options)
-          sql += options[:null] ? ' NULL' : ' NOT NULL'
+          if options[:null] == false
+            sql += ' NOT NULL'
+          end
+          #sql += options[:null] ? ' NULL' : ' NOT NULL'
 
           sql += " ENCODING #{quote_default_expression(options[:encoding])}" if options[:encoding]
-          sql += " COMPRSESSION #{quote_default_expression(options[:compression])}" if options[:compression]
-          sql += " DEFAULT #{quote_default_expression(options[:default])}" if options[:default]
+          sql += " COMPRESSION #{quote_default_expression(options[:compression])}" if options[:compression]
+          sql += " DEFAULT #{quote_default_expression(options[:default], options[:column])}" if options[:default]
           sql += " BLOCK SIZE #{options[:block_size].to_i}" if options[:block_size]
           sql
         end

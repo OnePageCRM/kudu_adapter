@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'active_record/connection_adapters/kudu/database_statements'
 require 'active_record/connection_adapters/kudu/schema_statements'
 require 'active_record/connection_adapters/kudu/type/big_int'

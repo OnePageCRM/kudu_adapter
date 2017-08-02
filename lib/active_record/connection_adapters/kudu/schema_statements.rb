@@ -89,7 +89,14 @@ module ActiveRecord
         end
 
         def column_exists?(table_name, column_name, type = nil, options = {})
-          raise 'TODO: Implement me (column exists)'
+          column_name = column_name.to_s
+          checks = []
+          checks << lambda { |c| c.name == column_name }
+          checks << lambda { |c| c.type == type } if type
+          column_options_keys.each do |attr|
+            checks << lambda { |c| c.send(attr) == options[attr] } if options.key?(attr)
+          end
+          columns(table_name).any? { |c| checks.all? { |check| check[c] } }
         end
 
         def primary_key(table_name)
@@ -154,7 +161,6 @@ module ActiveRecord
           execute "ALTER TABLE #{quote_table_name(table_name)} RENAME TO #{quote_table_name(new_name)}"
         end
 
-
         def add_column(table_name, column_name, type, options = {})
           at = create_alter_table table_name
           at.add_column(column_name, type, options)
@@ -185,7 +191,8 @@ module ActiveRecord
         end
 
         def rename_column(table_name, column_name, new_column_name)
-          raise 'TODO: Implement me (rename column)'
+          column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
+          execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
         end
 
         def add_index(table_name, column_name, options = {})
@@ -270,15 +277,18 @@ module ActiveRecord
         end
 
         def columns_for_distinct(columns, orders)
-          raise 'TODO: Implement me columns_for_distinct'
+          columns
         end
 
         def add_timestamps(table_name, options = {})
-          raise 'TODO: Implement me'
+          options[:null] = false if options[:null].nil?
+          add_column table_name, :created_at, :datetime, options
+          add_column table_name, :updated_at, :datetime, options
         end
 
         def remove_timestamps(table_name, options = {})
-          raise 'TODO: Implement me'
+          remove_column table_name, :updated_at
+          remove_column table_name, :created_at
         end
 
         def update_table_definition(table_name, base)

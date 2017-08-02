@@ -10,6 +10,10 @@ module ActiveRecord
 
         private
 
+        def visit_AddColumnDefinition(obj)
+          "ADD COLUMNS (#{accept(obj.column)})"
+        end
+
         def visit_ColumnDefinition(obj)
           obj.sql_type = type_to_sql(obj.type, obj.options)
           column_sql = "#{quote_column_name(obj.name)} #{obj.sql_type}".dup

@@ -100,7 +100,6 @@ module ActiveRecord
 
         def create_table(table_name, comment: nil, **options)
           td = create_table_definition table_name, options[:temporary], options[:options], options[:as], comment: comment
-
           if options[:id] != false && !options[:as]
             pk = options.fetch(:primary_key) do
               Base.get_primary_key table_name.to_s.singularize
@@ -127,7 +126,6 @@ module ActiveRecord
 
           if supports_comments? && !supports_comments_in_create?
             change_table_comment(table_name, comment) if comment.present?
-
             td.columns.each do |column|
               change_column_comment(table_name, column.name, column.comment) if column.comment.present?
             end
@@ -137,7 +135,7 @@ module ActiveRecord
         end
 
         def drop_table(table_name, **options)
-          raise 'TODO: Implement me (drop table)'
+          execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(table_name)}"
         end
 
         def create_join_table(table_1, table_2, colum_options: {}, **options)
@@ -153,20 +151,25 @@ module ActiveRecord
         end
 
         def rename_table(table_name, new_name)
-          raise 'TODO: Implement me (rename table)'
+          execute "ALTER TABLE #{quote_table_name(table_name)} RENAME TO #{quote_table_name(new_name)}"
         end
 
 
         def add_column(table_name, column_name, type, options = {})
-          raise 'TODO: Implement me (add column)'
+          at = create_alter_table table_name
+          at.add_column(column_name, type, options)
+          execute schema_creation.accept at
         end
 
         def remove_columns(table_name, column_names)
-          raise 'TODO: Implement me (remove columns)'
+          raise ArgumentError.new("You must specify at least one column name. Example: remove_columns(:people, :first_name)") if column_names.empty?
+          column_names.each do |column_name|
+            remove_column(table_name, column_name)
+          end
         end
 
         def remove_column(table_name, column_name, type = nil, options = {})
-          raise 'TODO: Implement me (remove column)'
+          execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
         end
 
         def change_column(table_name, type, options)

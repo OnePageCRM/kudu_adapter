@@ -26,13 +26,30 @@ module ActiveRecord
   end
 
   # :nodoc:
+  module Timestamp
+    private
+    def _create_record
+      if record_timestamps
+        current_time = current_time_from_proper_timezone
+        all_timestamp_attributes_in_model.each do |column|
+          # TODO (vsasa): problem is because attribute is present
+          # is set to created_at: 01.01.1970 bla bla
+          #if !attribute_present?(column)
+            write_attribute(column, current_time)
+          #end
+        end
+      end
+      super
+    end
+  end
+
+  # :nodoc:
   module ConnectionAdapters
     # Main Impala connection adapter class
     class KuduAdapter < ::ActiveRecord::ConnectionAdapters::AbstractAdapter
 
       include Kudu::DatabaseStatements
       include Kudu::SchemaStatements
-      #include Kudu::Quoting
 
       ADAPTER_NAME = 'Kudu'
 
@@ -168,7 +185,6 @@ module ActiveRecord
         # TODO: escape name
         execute "CREATE DATABASE IF NOT EXISTS `#{database_name}`"
       end
-
     end
   end
 end

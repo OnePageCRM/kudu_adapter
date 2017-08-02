@@ -175,6 +175,8 @@ module ActiveRecord
         end
 
         def remove_column(table_name, column_name, type = nil, options = {})
+          pks = primary_key(table_name)
+          raise ArgumentError.new("You cannot drop primary key fields") if pks.include? column_name.to_s
           execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
         end
 
@@ -191,6 +193,8 @@ module ActiveRecord
         end
 
         def rename_column(table_name, column_name, new_column_name)
+          pks = primary_key(table_name)
+          raise ArgumentError.new("You cannot rename primary key fields") if pks.include? column_name.to_s
           column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
           execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
         end

@@ -17,6 +17,15 @@ module ActiveRecord
           @partitions_count = options&.[](:partitions_count)
           @partition_columns = options&.[](:partition_columns)
         end
+
+        def double(*args, **options)
+          args.each { |name| column(name, :double, options) }
+        end
+
+        def float(*args, **options)
+          args.each { |name| column(name, :float, options) }
+        end
+
       end
     end
   end

@@ -145,6 +145,16 @@ module ActiveRecord
           execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(table_name)}"
         end
 
+        def add_primary_key(table_name, **options)
+          options.merge!(id: false)
+          raise 'TODO: Implement add_primary_key method for adding new primary key field to table'
+        end
+
+        def remove_primary_key(table_name, **options)
+          options.merge!(id: false)
+          raise 'TODO: Implement remove_primary_key method for adding new primary key field to table'
+        end
+
         def create_join_table(table_1, table_2, colum_options: {}, **options)
           join_table_name = find_join_table_name(table_1, table_2, options)
 
@@ -163,7 +173,7 @@ module ActiveRecord
 
         def drop_join_table(table_1, table_2, options = {})
           join_table_name = find_join_table_name(table_1, table_2, options)
-          execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(join_table_name)}"
+          drop_table join_table_name
         end
 
         def change_table(table_name, options = {})

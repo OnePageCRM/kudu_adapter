@@ -146,15 +146,34 @@ module ActiveRecord
         end
 
         def create_join_table(table_1, table_2, colum_options: {}, **options)
-          raise 'TODO: Implement me (create join table)'
+          join_table_name = find_join_table_name(table_1, table_2, options)
+
+          column_options = options.delete(:column_options) || {}
+          column_options.reverse_merge!(null: false)
+          column_options.merge!(primary_key: true)
+
+          t1_column, t2_column = [table_1, table_2].map{ |t| t.to_s.singularize.foreign_key }
+
+          create_table(join_table_name, options.merge!(id: false)) do |td|
+            td.string t1_column, column_options
+            td.string t2_column, column_options
+            yield td if block_given?
+          end
         end
 
         def drop_join_table(table_1, table_2, options = {})
-          raise 'TODO: Implement me (drop join table)'
+          join_table_name = find_join_table_name(table_1, table_2, options)
+          execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(join_table_name)}"
         end
 
         def change_table(table_name, options = {})
-          raise 'TODO: Implement me (change table)'
+          if supports_bulk_alter? && options[:bulk]
+            recorder = ActiveRecord::Migration::CommandRecorder.new(self)
+            yield update_table_definition(table_name, recorder)
+            bulk_change_table(table_name, recorder.commands)
+          else
+            yield update_table_definition(table_name, self)
+          end
         end
 
         def rename_table(table_name, new_name)
@@ -296,7 +315,7 @@ module ActiveRecord
         end
 
         def update_table_definition(table_name, base)
-          raise 'TODO: Implement me'
+          Table.new(table_name, base)
         end
 
         def add_index_options(table_name, column_name, comment: nil, **options)

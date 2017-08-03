@@ -32,11 +32,8 @@ module ActiveRecord
       if record_timestamps
         current_time = current_time_from_proper_timezone
         all_timestamp_attributes_in_model.each do |column|
-          # TODO (vsasa): problem is because attribute is present
-          # is set to created_at: 01.01.1970 bla bla
-          #if !attribute_present?(column)
-            write_attribute(column, current_time)
-          #end
+          # force inserting of current time for timestamp columns if is needed
+          write_attribute(column, current_time)
         end
       end
       super

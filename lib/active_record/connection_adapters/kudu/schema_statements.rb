@@ -200,15 +200,15 @@ module ActiveRecord
         end
 
         def add_index(table_name, column_name, options = {})
-          raise 'TODO: Implement me (add index)'
+          p '(add_index) Indexing not supported by Apache KUDU'
         end
 
         def remove_index(table_name, options = {})
-          raise 'TODO: Implement me (remove index)'
+          p '(remove_index) Indexing not supported by Apache KUDU'
         end
 
         def rename_index(table_name, old_name, new_name)
-          raise 'TODO: Implement me (rename index)'
+          p '(rename_index) Indexing not supported by Apache KUDU'
         end
 
         def index_name(table_name, options)
@@ -220,24 +220,24 @@ module ActiveRecord
         end
 
         def add_reference(table_name, ref_name, **options)
-          raise 'TODO: Implement me (add reference)'
+          p '(add_reference) Traditional referencing not supported by Apache KUDU'
         end
         alias add_belongs_to add_reference
 
         def remove_reference(table_name, ref_name, foreign_key: false, polymorphic: false, **options)
-          raise 'TODO: Implement me (remove reference)'
+          p '(remove_reference) Traditional referencing not supported by Apache KUDU'
         end
 
         def foreign_keys(table_name)
-          raise 'TODO: Implement me (foreign keys)'
+          p '(foreign_keys) Foreign keys not supported by Apache KUDU'
         end
 
         def add_foreign_key(from_table, to_table, options = {})
-          raise 'TODO: Implement me (add foreign key)'
+          p '(add_foreign_key) Foreign keys not supported by Apache KUDU'
         end
 
         def remove_foreign_key(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me (remove foreign key)'
+          p '(remove_foreign_key) Foreign keys not supported by Apache KUDU'
         end
 
         def foreign_key_exists?(from_table, options_or_to_table = {})

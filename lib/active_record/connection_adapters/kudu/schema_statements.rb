@@ -145,16 +145,6 @@ module ActiveRecord
           execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(table_name)}"
         end
 
-        def add_primary_key(table_name, **options)
-          options.merge!(id: false)
-          raise 'TODO: Implement add_primary_key method for adding new primary key field to table'
-        end
-
-        def remove_primary_key(table_name, **options)
-          options.merge!(id: false)
-          raise 'TODO: Implement remove_primary_key method for adding new primary key field to table'
-        end
-
         def create_join_table(table_1, table_2, colum_options: {}, **options)
           join_table_name = find_join_table_name(table_1, table_2, options)
 
@@ -191,9 +181,90 @@ module ActiveRecord
         end
 
         def add_column(table_name, column_name, type, options = {})
-          at = create_alter_table table_name
-          at.add_column(column_name, type, options)
-          execute schema_creation.accept at
+          if options_has_primary_key(options)
+            # be aware of primary key columns
+            #raise ArgumentError.new("You cannot add new primary key field")
+            redefine_table_add_primary_key(table_name, column_name, type, options)
+          else
+            at = create_alter_table table_name
+            at.add_column(column_name, type, options)
+            execute schema_creation.accept at
+          end
+        end
+
+        def redefine_table_add_primary_key(table_name, column_name, type, options = {})
+
+          a_temp_table_name = 'a_temp_' + table_name
+          b_temp_table_name = 'b_temp_' + table_name
+
+          columns = table_structure table_name
+          pk_columns = columns.select {|c| c[:primary_key] == 'true'}
+          non_pk_columns = columns.select {|c| c[:primary_key] == 'false'}
+
+          create_table(a_temp_table_name, options.merge!(id: false)) do |td|
+
+            # existing pk columns
+            pk_columns.each do |col|
+              opt = {}
+              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
+              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
+              opt[:default] = col[:default_value] if col[:default_value].present?
+              td.send col[:type].to_sym, col[:name], opt
+            end
+
+            # add new column
+            td.send type, column_name, options
+
+            non_pk_columns.each do |col|
+              opt = {}
+              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
+              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
+              opt[:default] = col[:default_value] if col[:default_value].present?
+              td.send col[:type].to_sym, col[:name], opt
+            end
+
+          end
+
+          # rename existing table to temp
+          rename_table(table_name, b_temp_table_name)
+          # rename newly created to active one
+          rename_table(a_temp_table_name, table_name)
+
+          # copy existing data into new table
+          # TODO...
+
+          drop_table(b_temp_table_name)
+
+        end
+
+        def redefine_table_drop_primary_key(table_name, column_name, type, options = {})
+
+          a_temp_table_name = 'a_temp_' + table_name
+          b_temp_table_name = 'b_temp_' + table_name
+
+          columns = table_structure table_name
+          columns.reject! { |c| c[:name] == column_name.to_s }
+
+          create_table(a_temp_table_name, options.merge!(id: false)) do |td|
+            columns.each do |col|
+              opt = {}
+              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
+              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
+              opt[:default] = col[:default_value] if col[:default_value].present?
+              td.send col[:type].to_sym, col[:name], opt
+            end
+          end
+
+          # rename existing table to temp
+          rename_table(table_name, b_temp_table_name)
+          # rename newly created to active one
+          rename_table(a_temp_table_name, table_name)
+
+          # copy existing data into new table
+          # TODO....
+
+          drop_table(b_temp_table_name)
+
         end
 
         def remove_columns(table_name, column_names)
@@ -204,9 +275,13 @@ module ActiveRecord
         end
 
         def remove_column(table_name, column_name, type = nil, options = {})
-          pks = primary_key(table_name)
-          raise ArgumentError.new("You cannot drop primary key fields") if pks.include? column_name.to_s
-          execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          if primary_keys_contain_column_name(table_name, column_name)
+            # be aware of primary key columns
+            #raise ArgumentError.new("You cannot drop primary key fields")
+            redefine_table_drop_primary_key(table_name, column_name, type, options)
+          else
+            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          end
         end
 
         def change_column(table_name, type, options)
@@ -358,6 +433,18 @@ module ActiveRecord
           quoted = quote_table_name table_name
           connection.query('DESCRIBE ' + quoted)
         end
+
+        # check if options contains primary_key
+        def options_has_primary_key(options)
+          options[:primary_key] = false if options[:primary_key].nil?
+          options[:primary_key]
+        end
+
+        def primary_keys_contain_column_name(table_name, column_name)
+          pks = primary_key(table_name)
+          pks.include? column_name.to_s
+        end
+
       end
     end
   end

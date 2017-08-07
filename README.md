@@ -69,6 +69,8 @@ Here, we have two fields in primary key (id, account_id)
 
 ## Add new column
 
+Basic case:
+
 ```
 class AddZipCodeToUsers < ActiveRecord::Migration[5.1]
   def change
@@ -77,7 +79,21 @@ class AddZipCodeToUsers < ActiveRecord::Migration[5.1]
 end
 ```
 
+In case of adding new primary key field, like:
+
+```
+class AddCompanyToUsers < ActiveRecord::Migration[5.1]
+  def change
+    add_column :users, :company_id, :string, primary_key: true
+  end
+end
+```
+
+an error will occur like: "Adding new primary key field is not supported by KUDU."
+
 ## Delete column
+
+Basic case:
 
 ```
 class RemoveZipCodeFromUsers < ActiveRecord::Migration[5.1]
@@ -86,6 +102,8 @@ class RemoveZipCodeFromUsers < ActiveRecord::Migration[5.1]
   end
 end
 ```
+
+In case of deleting primary key field (existing) an error will occur like for adding new primary key field.
 
 ## Model associations
 

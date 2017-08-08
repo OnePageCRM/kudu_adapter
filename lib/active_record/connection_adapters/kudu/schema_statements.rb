@@ -145,6 +145,14 @@ module ActiveRecord
           execute "DROP TABLE#{' IF EXISTS' if options[:if_exists]} #{quote_table_name(table_name)}"
         end
 
+        def drop_temp_tables
+          tbl = tables
+          to_delete = tbl.select {|tbl| tbl.include? '_temp' }
+          to_delete.each do |dt|
+            drop_table(dt)
+          end
+        end
+
         def create_join_table(table_1, table_2, colum_options: {}, **options)
           join_table_name = find_join_table_name(table_1, table_2, options)
 
@@ -177,7 +185,9 @@ module ActiveRecord
         end
 
         def rename_table(table_name, new_name)
+          db_name = Rails.configuration.database_configuration[Rails.env]['database']
           execute "ALTER TABLE #{quote_table_name(table_name)} RENAME TO #{quote_table_name(new_name)}"
+          execute "ALTER TABLE #{quote_table_name(new_name)} SET TblProperties('kudu.table_name' = 'impala::#{db_name}.#{new_name}')"
         end
 
         def add_column(table_name, column_name, type, options = {})
@@ -192,16 +202,41 @@ module ActiveRecord
           end
         end
 
+        # It will reload all data from temp table name into new one.
+        # We're seeking for table_name_temp while we inserting data with additional new column and it's value.
+        # At the end table_name_temp is dropped indeed.
+        def reload_table_data(table_name, column_name, options = {})
+          temp_table_name = table_name + '_temp'
+
+          # get table structure and remove our column name
+          columns = table_structure table_name
+          columns.reject! { |c| c[:name] == column_name.to_s }
+
+          select_qry = columns.map {|col| col[:name].to_s }.join(',')
+
+          # values with additional column name
+          values = select_qry + ',' + column_name.to_s
+          # fetch values with our column name and value to insert
+          fetch_values = select_qry + ',' + quote(options[:default]) + ' AS ' + column_name.to_s
+
+          insert_qry = "INSERT INTO #{quote_table_name(table_name)} (#{values}) SELECT #{fetch_values} FROM #{quote_table_name(temp_table_name)}"
+          execute insert_qry
+
+          drop_table(temp_table_name)
+        end
+
+        # This method will copy existing structure of table with added new field.
+        # It works only if we adding new primary key on existing table.
         def redefine_table_add_primary_key(table_name, column_name, type, options = {})
 
-          a_temp_table_name = 'a_temp_' + table_name
-          b_temp_table_name = 'b_temp_' + table_name
+          redefined_table_name = table_name + '_redefined'
+          temp_table_name = table_name + '_temp'
 
           columns = table_structure table_name
           pk_columns = columns.select {|c| c[:primary_key] == 'true'}
           non_pk_columns = columns.select {|c| c[:primary_key] == 'false'}
 
-          create_table(a_temp_table_name, options.merge!(id: false)) do |td|
+          create_table(redefined_table_name, { id: false }) do |td|
 
             # existing pk columns
             pk_columns.each do |col|
@@ -226,21 +261,21 @@ module ActiveRecord
           end
 
           # rename existing table to temp
-          rename_table(table_name, b_temp_table_name)
+          rename_table(table_name, temp_table_name)
           # rename newly created to active one
-          rename_table(a_temp_table_name, table_name)
+          rename_table(redefined_table_name, table_name)
 
         end
 
         def redefine_table_drop_primary_key(table_name, column_name, type, options = {})
 
-          a_temp_table_name = 'a_temp_' + table_name
-          b_temp_table_name = 'b_temp_' + table_name
+          redefined_table_name = table_name + '_redefined'
+          temp_table_name = table_name + '_temp'
 
           columns = table_structure table_name
           columns.reject! { |c| c[:name] == column_name.to_s }
 
-          create_table(a_temp_table_name, options.merge!(id: false)) do |td|
+          create_table(redefined_table_name, { id: false }) do |td|
             columns.each do |col|
               opt = {}
               opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
@@ -251,14 +286,17 @@ module ActiveRecord
           end
 
           # rename existing table to temp
-          rename_table(table_name, b_temp_table_name)
+          rename_table(table_name, temp_table_name)
           # rename newly created to active one
-          rename_table(a_temp_table_name, table_name)
+          rename_table(redefined_table_name, table_name)
 
-          # copy existing data into new table
-          # TODO....
+          # copy reduced existing data into new table
+          select_qry = columns.map {|col| col[:name].to_s }.join(',')
+          copy_qry = "INSERT INTO #{quote_table_name(table_name)} (#{select_qry}) SELECT #{select_qry} FROM #{quote_table_name(temp_table_name)}"
+          execute copy_qry
 
-          #drop_table(b_temp_table_name)
+          # finally, drop temp table
+          drop_table(temp_table_name)
 
         end
 
@@ -272,8 +310,8 @@ module ActiveRecord
         def remove_column(table_name, column_name, type = nil, options = {})
           if primary_keys_contain_column_name(table_name, column_name)
             # be aware of primary key columns
-            raise ArgumentError.new("You cannot drop primary key fields")
-            #redefine_table_drop_primary_key(table_name, column_name, type, options)
+            #raise ArgumentError.new("You cannot drop primary key fields")
+            redefine_table_drop_primary_key(table_name, column_name, type, options)
           else
             execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
           end

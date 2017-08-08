@@ -230,11 +230,6 @@ module ActiveRecord
           # rename newly created to active one
           rename_table(a_temp_table_name, table_name)
 
-          # copy existing data into new table
-          # TODO...
-
-          drop_table(b_temp_table_name)
-
         end
 
         def redefine_table_drop_primary_key(table_name, column_name, type, options = {})
@@ -263,7 +258,7 @@ module ActiveRecord
           # copy existing data into new table
           # TODO....
 
-          drop_table(b_temp_table_name)
+          #drop_table(b_temp_table_name)
 
         end
 
@@ -277,8 +272,8 @@ module ActiveRecord
         def remove_column(table_name, column_name, type = nil, options = {})
           if primary_keys_contain_column_name(table_name, column_name)
             # be aware of primary key columns
-            #raise ArgumentError.new("You cannot drop primary key fields")
-            redefine_table_drop_primary_key(table_name, column_name, type, options)
+            raise ArgumentError.new("You cannot drop primary key fields")
+            #redefine_table_drop_primary_key(table_name, column_name, type, options)
           else
             execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
           end

@@ -25,7 +25,7 @@ module ActiveRecord
         end
 
         def table_comment(table_name)
-          raise 'TODO: Implement me (table comment)'
+          raise NotImplementedError, '#table_comment Comments not implemented'
         end
 
         def table_alias_for(table_name)
@@ -61,11 +61,11 @@ module ActiveRecord
         end
 
         def indexes(table_name, name = nil)
-          [] # TODO? Or mark as not implemented
+          []
         end
 
         def index_exists?(table_name, column_name, options = {})
-          raise 'TODO: Implement me (index exists?)'
+          raise NotImplementedError, '#index_exists? Indexing not implemented'
         end
 
         def columns(table_name)
@@ -194,13 +194,47 @@ module ActiveRecord
         def add_column(table_name, column_name, type, options = {})
           if options_has_primary_key(options)
             # be aware of primary key columns
-            #raise ArgumentError.new("You cannot add new primary key field")
             redefine_table_add_primary_key(table_name, column_name, type, options)
           else
             at = create_alter_table table_name
             at.add_column(column_name, type, options)
             execute schema_creation.accept at
           end
+        end
+
+        def remove_columns(table_name, column_names)
+          raise ArgumentError.new("You must specify at least one column name. Example: remove_columns(:people, :first_name)") if column_names.empty?
+          column_names.each do |column_name|
+            remove_column(table_name, column_name)
+          end
+        end
+
+        def remove_column(table_name, column_name, type = nil, options = {})
+          if primary_keys_contain_column_name(table_name, column_name)
+            # be aware of primary key columns
+            #raise ArgumentError.new("You cannot drop primary key fields")
+            redefine_table_drop_primary_key(table_name, column_name, type, options)
+          else
+            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          end
+        end
+
+        def change_column(table_name, column_name, type, options)
+          raise NotImplementedError, '#change_column Altering columns not implemented'
+        end
+
+        def change_column_default(table_name, column_name, default_or_changes)
+          raise NotImplementedError, '#change_column_default Altering column defaults not implemented'
+        end
+
+        def change_column_null(table_name, column_name, null, default = nil)
+          raise NotImplementedError, '#change_column_null Altering column null not implemented'
+        end
+
+        def rename_column(table_name, column_name, new_column_name)
+          raise ArgumentError.new('You cannot rename primary key fields') if primary_keys_contain_column_name(table_name, column_name)
+          column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
+          execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
         end
 
         # It will reload all data from temp table name into new one.
@@ -224,41 +258,6 @@ module ActiveRecord
           execute insert_qry
 
           drop_table(temp_table_name)
-        end
-
-        def remove_columns(table_name, column_names)
-          raise ArgumentError.new("You must specify at least one column name. Example: remove_columns(:people, :first_name)") if column_names.empty?
-          column_names.each do |column_name|
-            remove_column(table_name, column_name)
-          end
-        end
-
-        def remove_column(table_name, column_name, type = nil, options = {})
-          if primary_keys_contain_column_name(table_name, column_name)
-            # be aware of primary key columns
-            #raise ArgumentError.new("You cannot drop primary key fields")
-            redefine_table_drop_primary_key(table_name, column_name, type, options)
-          else
-            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
-          end
-        end
-
-        def change_column(table_name, column_name, type, options)
-          raise 'TODO: Implement me (change column)'
-        end
-
-        def change_column_default(table_name, column_name, default_or_changes)
-          raise 'TODO: Implement me (change column default)'
-        end
-
-        def change_column_null(table_name, column_name, null, default = nil)
-          raise 'TODO: Implement me (change column null)'
-        end
-
-        def rename_column(table_name, column_name, new_column_name)
-          raise ArgumentError.new("You cannot rename primary key fields") if primary_keys_contain_column_name(table_name, column_name)
-          column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
-          execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
         end
 
         def add_index(table_name, column_name, options = {})
@@ -322,8 +321,33 @@ module ActiveRecord
           p '(foreign_key_options) Foreign keys not supported by Apache KUDU'
         end
 
-        def assume_migrated_upto_version(version, migration_paths)
-          raise 'TODO: Implement me assume_migrated_upto_version'
+        def assume_migrated_upto_version(version, migrations_paths)
+          migrations_paths = Array(migrations_paths)
+          version = version.to_i
+          sm_table = quote_table_name(ActiveRecord::SchemaMigration.table_name)
+
+          migrated = ActiveRecord::SchemaMigration.all_versions.map(&:to_i)
+          versions = ActiveRecord::Migrator.migration_files(migrations_paths).map do |file|
+            ActiveRecord::Migrator.parse_migration_filename(file).first.to_i
+          end
+
+          unless migrated.include?(version)
+            execute "INSERT INTO #{sm_table} (version) VALUES (#{quote(version)})"
+          end
+
+          inserting = (versions - migrated).select { |v| v < version }
+          if inserting.any?
+            if (duplicate = inserting.detect { |v| inserting.count(v) > 1 })
+              raise "Duplicate migration #{duplicate}. Please renumber your migrations to resolve the conflict."
+            end
+            if supports_multi_insert?
+              execute insert_versions_sql(inserting)
+            else
+              inserting.each do |v|
+                execute insert_versions_sql(v)
+              end
+            end
+          end
         end
 
         def type_to_sql(type, limit: nil, precision: nil, scale: nil, **)
@@ -348,8 +372,8 @@ module ActiveRecord
 
         def add_timestamps(table_name, options = {})
           options[:null] = false if options[:null].nil?
-          add_column table_name, :created_at, :datetime, options
-          add_column table_name, :updated_at, :datetime, options
+          add_column table_name, :created_at, :bigint, options
+          add_column table_name, :updated_at, :bigint, options
         end
 
         def remove_timestamps(table_name, options = {})
@@ -403,7 +427,7 @@ module ActiveRecord
           pks.include? column_name.to_s
         end
 
-        def options_from_column_definition(column)
+        def set_options_from_column_definition(column)
           opt = {}
           opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(column[:primary_key]) if column[:primary_key].present?
           opt[:null] = ActiveModel::Type::Boolean.new.cast(column[:nullable]) if column[:nullable].present?
@@ -426,14 +450,14 @@ module ActiveRecord
 
             # existing pk columns
             pk_columns.each do |col|
-              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
+              td.send col[:type].to_sym, col[:name], set_options_from_column_definition(col)
             end
 
             # add new column
             td.send type, column_name, options
 
             non_pk_columns.each do |col|
-              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
+              td.send col[:type].to_sym, col[:name], set_options_from_column_definition(col)
             end
 
           end
@@ -457,7 +481,7 @@ module ActiveRecord
 
           create_table(redefined_table_name, { id: false }) do |td|
             columns.each do |col|
-              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
+              td.send col[:type].to_sym, col[:name], set_options_from_column_definition(col)
             end
           end
 

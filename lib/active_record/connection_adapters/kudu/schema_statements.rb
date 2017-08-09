@@ -226,7 +226,7 @@ module ActiveRecord
         end
 
         # This method will copy existing structure of table with added new field.
-        # It works only if we adding new primary key on existing table.
+        # It works only if we're adding new primary key on existing table.
         def redefine_table_add_primary_key(table_name, column_name, type, options = {})
 
           redefined_table_name = table_name + '_redefined'
@@ -240,22 +240,14 @@ module ActiveRecord
 
             # existing pk columns
             pk_columns.each do |col|
-              opt = {}
-              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
-              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
-              opt[:default] = col[:default_value] if col[:default_value].present?
-              td.send col[:type].to_sym, col[:name], opt
+              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
             end
 
             # add new column
             td.send type, column_name, options
 
             non_pk_columns.each do |col|
-              opt = {}
-              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
-              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
-              opt[:default] = col[:default_value] if col[:default_value].present?
-              td.send col[:type].to_sym, col[:name], opt
+              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
             end
 
           end
@@ -267,6 +259,8 @@ module ActiveRecord
 
         end
 
+        # This method will copy existing structure of table with primary key field removed.
+        # It works only if we're removing primary key on existing table.
         def redefine_table_drop_primary_key(table_name, column_name, type, options = {})
 
           redefined_table_name = table_name + '_redefined'
@@ -277,11 +271,7 @@ module ActiveRecord
 
           create_table(redefined_table_name, { id: false }) do |td|
             columns.each do |col|
-              opt = {}
-              opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(col[:primary_key]) if col[:primary_key].present?
-              opt[:null] = ActiveModel::Type::Boolean.new.cast(col[:nullable]) if col[:nullable].present?
-              opt[:default] = col[:default_value] if col[:default_value].present?
-              td.send col[:type].to_sym, col[:name], opt
+              td.send col[:type].to_sym, col[:name], options_from_column_definition(col)
             end
           end
 
@@ -317,7 +307,7 @@ module ActiveRecord
           end
         end
 
-        def change_column(table_name, type, options)
+        def change_column(table_name, column_name, type, options)
           raise 'TODO: Implement me (change column)'
         end
 
@@ -476,6 +466,14 @@ module ActiveRecord
         def primary_keys_contain_column_name(table_name, column_name)
           pks = primary_key(table_name)
           pks.include? column_name.to_s
+        end
+
+        def options_from_column_definition(column)
+          opt = {}
+          opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(column[:primary_key]) if column[:primary_key].present?
+          opt[:null] = ActiveModel::Type::Boolean.new.cast(column[:nullable]) if column[:nullable].present?
+          opt[:default] = column[:default_value] if column[:default_value].present?
+          opt
         end
 
       end

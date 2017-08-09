@@ -19,8 +19,9 @@ module ActiveRecord
 
       # :nodoc:
       module SchemaStatements
+
         def table_options(table_name)
-          nil # TODO???
+          nil
         end
 
         def table_comment(table_name)
@@ -225,6 +226,191 @@ module ActiveRecord
           drop_table(temp_table_name)
         end
 
+        def remove_columns(table_name, column_names)
+          raise ArgumentError.new("You must specify at least one column name. Example: remove_columns(:people, :first_name)") if column_names.empty?
+          column_names.each do |column_name|
+            remove_column(table_name, column_name)
+          end
+        end
+
+        def remove_column(table_name, column_name, type = nil, options = {})
+          if primary_keys_contain_column_name(table_name, column_name)
+            # be aware of primary key columns
+            #raise ArgumentError.new("You cannot drop primary key fields")
+            redefine_table_drop_primary_key(table_name, column_name, type, options)
+          else
+            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          end
+        end
+
+        def change_column(table_name, column_name, type, options)
+          raise 'TODO: Implement me (change column)'
+        end
+
+        def change_column_default(table_name, column_name, default_or_changes)
+          raise 'TODO: Implement me (change column default)'
+        end
+
+        def change_column_null(table_name, column_name, null, default = nil)
+          raise 'TODO: Implement me (change column null)'
+        end
+
+        def rename_column(table_name, column_name, new_column_name)
+          raise ArgumentError.new("You cannot rename primary key fields") if primary_keys_contain_column_name(table_name, column_name)
+          column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
+          execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
+        end
+
+        def add_index(table_name, column_name, options = {})
+          p '(add_index) Indexing not supported by Apache KUDU'
+        end
+
+        def remove_index(table_name, options = {})
+          p '(remove_index) Indexing not supported by Apache KUDU'
+        end
+
+        def rename_index(table_name, old_name, new_name)
+          p '(rename_index) Indexing not supported by Apache KUDU'
+        end
+
+        def index_name(table_name, options)
+          p '(index_name) Indexing not supported by Apache KUDU'
+        end
+
+        def index_name_exists?(table_name, index_name, default = nil)
+          p '(index_name_exists?) Indexing not supported by Apache KUDU'
+        end
+
+        def add_reference(table_name, ref_name, **options)
+          p '(add_reference) Traditional referencing not supported by Apache KUDU'
+        end
+        alias add_belongs_to add_reference
+
+        def remove_reference(table_name, ref_name, foreign_key: false, polymorphic: false, **options)
+          p '(remove_reference) Traditional referencing not supported by Apache KUDU'
+        end
+
+        def foreign_keys(table_name)
+          p '(foreign_keys) Foreign keys not supported by Apache KUDU'
+        end
+
+        def add_foreign_key(from_table, to_table, options = {})
+          p '(add_foreign_key) Foreign keys not supported by Apache KUDU'
+        end
+
+        def remove_foreign_key(from_table, options_or_to_table = {})
+          p '(remove_foreign_key) Foreign keys not supported by Apache KUDU'
+        end
+
+        def foreign_key_exists?(from_table, options_or_to_table = {})
+          p '(foreign_key_exists?) Foreign keys not supported by Apache KUDU'
+        end
+
+        def foreign_key_for(from_table, options_or_to_table = {})
+          p '(foreign_key_for?) Foreign keys not supported by Apache KUDU'
+        end
+
+        def foreign_key_for!(from_table, options_or_to_table = {})
+          p '(foreign_key_for!) Foreign keys not supported by Apache KUDU'
+        end
+
+        def foreign_key_for_column_for(table_name)
+          p '(foreign_key_for_column_for) Foreign keys not supported by Apache KUDU'
+        end
+
+        def foreign_key_options(from_table, to_table, options)
+          p '(foreign_key_options) Foreign keys not supported by Apache KUDU'
+        end
+
+        def assume_migrated_upto_version(version, migration_paths)
+          raise 'TODO: Implement me assume_migrated_upto_version'
+        end
+
+        def type_to_sql(type, limit: nil, precision: nil, scale: nil, **)
+          case type
+          when 'integer'
+            case limit
+            when 1 then 'TINYINT'
+            when 2 then 'SMALLINT'
+            when 3..4, nil then 'INT'
+            when 5..8 then 'BIGINT'
+            else
+              raise(ActiveRecordError, 'Invalid integer precision')
+            end
+          else
+            super
+          end
+        end
+
+        def columns_for_distinct(columns, orders)
+          columns
+        end
+
+        def add_timestamps(table_name, options = {})
+          options[:null] = false if options[:null].nil?
+          add_column table_name, :created_at, :datetime, options
+          add_column table_name, :updated_at, :datetime, options
+        end
+
+        def remove_timestamps(table_name, options = {})
+          remove_column table_name, :updated_at
+          remove_column table_name, :created_at
+        end
+
+        def update_table_definition(table_name, base)
+          Table.new(table_name, base)
+        end
+
+        def add_index_options(table_name, column_name, comment: nil, **options)
+          p '(add_index_options) Indexing not supported by Apache KUDU'
+        end
+
+        def options_include_default?(options)
+          options.include?(:default) && !(options[:null] == false && options[:default].nil?)
+        end
+
+        def change_table_comment(table_name, comment)
+          p '(change_table_comment) Altering table comments not supported by Apache KUDU'
+        end
+
+        def change_column_comment(table_name, column_name, comment)
+          p '(change_column_comment) Altering column comments not supported by Apache KUDU'
+        end
+
+        private
+
+        def schema_creation
+          ::ActiveRecord::ConnectionAdapters::Kudu::SchemaCreation.new(self)
+        end
+
+        def create_table_definition(*args)
+          ::ActiveRecord::ConnectionAdapters::Kudu::TableDefinition.new(*args)
+        end
+
+        def table_structure(table_name)
+          quoted = quote_table_name table_name
+          connection.query('DESCRIBE ' + quoted)
+        end
+
+        # check if options contains primary_key
+        def options_has_primary_key(options)
+          options[:primary_key] = false if options[:primary_key].nil?
+          options[:primary_key]
+        end
+
+        def primary_keys_contain_column_name(table_name, column_name)
+          pks = primary_key(table_name)
+          pks.include? column_name.to_s
+        end
+
+        def options_from_column_definition(column)
+          opt = {}
+          opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(column[:primary_key]) if column[:primary_key].present?
+          opt[:null] = ActiveModel::Type::Boolean.new.cast(column[:nullable]) if column[:nullable].present?
+          opt[:default] = column[:default_value] if column[:default_value].present?
+          opt
+        end
+
         # This method will copy existing structure of table with added new field.
         # It works only if we're adding new primary key on existing table.
         def redefine_table_add_primary_key(table_name, column_name, type, options = {})
@@ -288,192 +474,6 @@ module ActiveRecord
           # finally, drop temp table
           drop_table(temp_table_name)
 
-        end
-
-        def remove_columns(table_name, column_names)
-          raise ArgumentError.new("You must specify at least one column name. Example: remove_columns(:people, :first_name)") if column_names.empty?
-          column_names.each do |column_name|
-            remove_column(table_name, column_name)
-          end
-        end
-
-        def remove_column(table_name, column_name, type = nil, options = {})
-          if primary_keys_contain_column_name(table_name, column_name)
-            # be aware of primary key columns
-            #raise ArgumentError.new("You cannot drop primary key fields")
-            redefine_table_drop_primary_key(table_name, column_name, type, options)
-          else
-            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
-          end
-        end
-
-        def change_column(table_name, column_name, type, options)
-          raise 'TODO: Implement me (change column)'
-        end
-
-        def change_column_default(table_name, column_name, default_or_changes)
-          raise 'TODO: Implement me (change column default)'
-        end
-
-        def change_column_null(table_name, column_name, null, default = nil)
-          raise 'TODO: Implement me (change column null)'
-        end
-
-        def rename_column(table_name, column_name, new_column_name)
-          pks = primary_key(table_name)
-          raise ArgumentError.new("You cannot rename primary key fields") if pks.include? column_name.to_s
-          column = columns(table_name).find { |c| c.name.to_s == column_name.to_s }
-          execute "ALTER TABLE #{quote_table_name(table_name)} CHANGE #{quote_column_name(column_name)} #{quote_column_name(new_column_name)} #{column.sql_type}"
-        end
-
-        def add_index(table_name, column_name, options = {})
-          p '(add_index) Indexing not supported by Apache KUDU'
-        end
-
-        def remove_index(table_name, options = {})
-          p '(remove_index) Indexing not supported by Apache KUDU'
-        end
-
-        def rename_index(table_name, old_name, new_name)
-          p '(rename_index) Indexing not supported by Apache KUDU'
-        end
-
-        def index_name(table_name, options)
-          raise 'TODO: Implement me (index name)'
-        end
-
-        def index_name_exists?(table_name, index_name, default = nil)
-          raise 'TODO: Implement me (index name exists)'
-        end
-
-        def add_reference(table_name, ref_name, **options)
-          p '(add_reference) Traditional referencing not supported by Apache KUDU'
-        end
-        alias add_belongs_to add_reference
-
-        def remove_reference(table_name, ref_name, foreign_key: false, polymorphic: false, **options)
-          p '(remove_reference) Traditional referencing not supported by Apache KUDU'
-        end
-
-        def foreign_keys(table_name)
-          p '(foreign_keys) Foreign keys not supported by Apache KUDU'
-        end
-
-        def add_foreign_key(from_table, to_table, options = {})
-          p '(add_foreign_key) Foreign keys not supported by Apache KUDU'
-        end
-
-        def remove_foreign_key(from_table, options_or_to_table = {})
-          p '(remove_foreign_key) Foreign keys not supported by Apache KUDU'
-        end
-
-        def foreign_key_exists?(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me (foreign key exists)'
-        end
-
-        def foreign_key_for(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me foreign_ke_for'
-        end
-
-        def foreign_key_for!(from_table, options_or_to_table = {})
-          raise 'TODO: Implement me foreign_key_for!'
-        end
-
-        def foreign_key_for_column_for(table_name)
-          raise 'TODO: Implement me foreign_key_for_column_for'
-        end
-
-        def foreign_key_options(from_table, to_table, options)
-          raise 'TODO: Implement me foreign_key_options'
-        end
-
-        def assume_migrated_upto_version(version, migration_paths)
-          raise 'TODO: Implement me assume_migrated_upto_version'
-        end
-
-        def type_to_sql(type, limit: nil, precision: nil, scale: nil, **)
-          case type
-          when 'integer'
-            case limit
-            when 1 then 'TINYINT'
-            when 2 then 'SMALLINT'
-            when 3..4, nil then 'INT'
-            when 5..8 then 'BIGINT'
-            else
-              raise(ActiveRecordError, 'Invalid integer precision')
-            end
-          else
-            super
-          end
-        end
-
-        def columns_for_distinct(columns, orders)
-          columns
-        end
-
-        def add_timestamps(table_name, options = {})
-          options[:null] = false if options[:null].nil?
-          add_column table_name, :created_at, :datetime, options
-          add_column table_name, :updated_at, :datetime, options
-        end
-
-        def remove_timestamps(table_name, options = {})
-          remove_column table_name, :updated_at
-          remove_column table_name, :created_at
-        end
-
-        def update_table_definition(table_name, base)
-          Table.new(table_name, base)
-        end
-
-        def add_index_options(table_name, column_name, comment: nil, **options)
-          raise 'TODO: Implement me'
-        end
-
-        def options_iclude_default?(options)
-          raise 'TODO: Implement me'
-        end
-
-        def change_table_comment(table_name, comment)
-          raise 'TODO: Implement me'
-        end
-
-        def change_column_comment(table_name, column_name, comment)
-          raise 'TODO: Implement me'
-        end
-
-        private
-
-        def schema_creation
-          ::ActiveRecord::ConnectionAdapters::Kudu::SchemaCreation.new(self)
-        end
-
-        def create_table_definition(*args)
-          ::ActiveRecord::ConnectionAdapters::Kudu::TableDefinition.new(*args)
-        end
-
-        def table_structure(table_name)
-          quoted = quote_table_name table_name
-          connection.query('DESCRIBE ' + quoted)
-        end
-
-        # check if options contains primary_key
-        def options_has_primary_key(options)
-          options[:primary_key] = false if options[:primary_key].nil?
-          options[:primary_key]
-        end
-
-        def primary_keys_contain_column_name(table_name, column_name)
-          pks = primary_key(table_name)
-          pks.include? column_name.to_s
-        end
-
-        def options_from_column_definition(column)
-          opt = {}
-          opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(column[:primary_key]) if column[:primary_key].present?
-          opt[:null] = ActiveModel::Type::Boolean.new.cast(column[:nullable]) if column[:nullable].present?
-          opt[:default] = column[:default_value] if column[:default_value].present?
-          opt
         end
 
       end

@@ -24,7 +24,7 @@ module ActiveRecord
           else
             value = lookup_cast_type(column.sql_type).serialize(value)
             # DOUBLE, FLOAT represented as 0.0 but KUDU supports only DEFAULT statement as 0
-            value = 0 if value.to_i == 0 if %w(DOUBLE FLOAT).include? column.sql_type
+            value = value.to_i if %w(DOUBLE FLOAT).include? column.sql_type
             quote(value)
           end
         end

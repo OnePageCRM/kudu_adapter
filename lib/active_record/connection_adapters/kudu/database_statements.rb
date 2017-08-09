@@ -17,7 +17,7 @@ module ActiveRecord
               sql = sql.sub('?', bind.to_s)
             end
           end
-          p 'QUERY : ' + sql.to_s
+          ::Rails.logger.info 'QUERY : ' + sql.to_s
           result = connection.query sql
           columns = result.first&.keys.to_a
           rows = result.map { |row| row.fetch_values(*columns) }

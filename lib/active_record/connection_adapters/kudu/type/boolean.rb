@@ -7,9 +7,15 @@ module ActiveRecord
     module Kudu
       module Type
         class Boolean < ::ActiveModel::Type::Boolean
+
           def type
             :boolean
           end
+
+          def serialize(value)
+            ActiveModel::Type::Boolean.new.cast(value)
+          end
+
         end
       end
     end

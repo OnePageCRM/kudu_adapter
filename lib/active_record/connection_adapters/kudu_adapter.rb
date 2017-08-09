@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'active_record/connection_adapters/kudu/quoting'
 require 'active_record/connection_adapters/kudu/database_statements'
 require 'active_record/connection_adapters/kudu/schema_statements'
 require 'active_record/connection_adapters/kudu/type/big_int'
@@ -47,6 +48,7 @@ module ActiveRecord
 
       include Kudu::DatabaseStatements
       include Kudu::SchemaStatements
+      include Kudu::Quoting
 
       ADAPTER_NAME = 'Kudu'
 
@@ -122,26 +124,6 @@ module ActiveRecord
 
       def lookup_cast_type_from_column(column)
         lookup_cast_type column.type.to_s
-      end
-
-      def quote_table_name(table_name)
-        table_name # TODO
-      end
-
-      def quoted_true
-        true.to_s
-      end
-
-      def unquoted_true
-        true
-      end
-
-      def quoted_false
-        false.to_s
-      end
-
-      def unquoted_false
-        false
       end
 
       def supports_migrations?

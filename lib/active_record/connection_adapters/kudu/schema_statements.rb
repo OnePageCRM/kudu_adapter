@@ -431,7 +431,8 @@ module ActiveRecord
           opt = {}
           opt[:primary_key] = ActiveModel::Type::Boolean.new.cast(column[:primary_key]) if column[:primary_key].present?
           opt[:null] = ActiveModel::Type::Boolean.new.cast(column[:nullable]) if column[:nullable].present?
-          opt[:default] = column[:default_value] if column[:default_value].present?
+          opt[:default] = lookup_cast_type(column[:type]).serialize(column[:default_value]) if column[:default_value].present?
+          # TODO: Do we have more options ?
           opt
         end
 

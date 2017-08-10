@@ -332,7 +332,7 @@ module ActiveRecord
           end
 
           unless migrated.include?(version)
-            execute "INSERT INTO #{sm_table} (version) VALUES (#{quote(version)})"
+            execute "INSERT INTO #{sm_table} (version) VALUES (#{quote(version.to_s)})"
           end
 
           inserting = (versions - migrated).select { |v| v < version }
@@ -344,7 +344,7 @@ module ActiveRecord
               execute insert_versions_sql(inserting)
             else
               inserting.each do |v|
-                execute insert_versions_sql(v)
+                execute insert_versions_sql(v.to_s)
               end
             end
           end

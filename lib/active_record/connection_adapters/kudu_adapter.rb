@@ -130,6 +130,10 @@ module ActiveRecord
         true
       end
 
+      def supports_multi_insert?
+        false
+      end
+
       def supports_primary_key?
         true
       end

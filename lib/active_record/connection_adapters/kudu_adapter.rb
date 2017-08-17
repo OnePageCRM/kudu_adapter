@@ -92,7 +92,7 @@ module ActiveRecord
       end
 
       def disconnect!
-        @connection.close
+        @connection.close if @connection.open?
         @connection = nil
       end
 

@@ -11,9 +11,9 @@ Gem::Specification.new do |s|
   s.authors = ['Paweł Smoliński', 'OnePageCRM']
   s.licenses = ['MIT']
   s.email = 'devteam@onepagecrm.com'
-  s.homepage = 'https://github.com/OnePageCRM/impala_adapter'
-  s.summary = "ActiveRecord adapter for Cloudera's Kudu Impala database"
-  s.description = "ActiveRecord adapter for Cloudera's Kudu Impala database"
+  s.homepage = 'https://github.com/OnePageCRM/kudu_adapter'
+  s.summary = "ActiveRecord adapter for Cloudera's Kudu over Impala database"
+  s.description = "ActiveRecord adapter for Cloudera's Kudu over Impala database"
   s.email = 'devteam@onepagecrm.com'
 
   s.add_runtime_dependency('arel', ['~> 8.0'])

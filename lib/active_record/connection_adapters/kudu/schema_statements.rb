@@ -72,7 +72,7 @@ module ActiveRecord
           table_structure(table_name).map do |col_def|
             type = if col_def[:type] == 'int'
                      :integer
-                   elsif col_def[:type] == 'bigint' && /_at$/ =~ col_def[:name]
+                   elsif col_def[:type] == 'bigint' && /(_at|_date|_time)$/ =~ col_def[:name]
                      :datetime
                    else
                      col_def[:type].to_sym
@@ -372,8 +372,8 @@ module ActiveRecord
 
         def add_timestamps(table_name, options = {})
           options[:null] = false if options[:null].nil?
-          add_column table_name, :created_at, :bigint, options
-          add_column table_name, :updated_at, :bigint, options
+          add_column table_name, :created_at, :datetime, options
+          add_column table_name, :updated_at, :datetime, options
         end
 
         def remove_timestamps(table_name, options = {})

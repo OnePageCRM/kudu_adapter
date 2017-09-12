@@ -10,11 +10,11 @@ module ActiveRecord
         # :nodoc:
         def exec_query(sql, _ = 'SQL', binds = [], prepare: false)
           ::Rails.logger.warn 'Prepared statements are not supported' if prepare
-
+          # Important because of replacing ? marks and if we have replaced string with ? inside...
+          sql = sql.gsub(' ?', ' @@?')
           unless without_prepared_statement? binds
             type_casted_binds(binds).each do |bind|
-              bind = quote(bind)
-              sql = sql.sub('?', bind.to_s)
+              sql = sql.sub('@@?', quote(bind).to_s)
             end
           end
           #::Rails.logger.info 'QUERY : ' + sql.to_s

@@ -18,6 +18,11 @@ module ActiveRecord
           quote_column_name table_name
         end
 
+        def quote_string(s)
+          # This will make proper single quote in text
+          s.gsub('\\', '\&\&').gsub("'", "\\\\\\\\'")
+        end
+
         def quote_default_expression(value, column) # :nodoc:
           if value.is_a?(Proc)
             value.call

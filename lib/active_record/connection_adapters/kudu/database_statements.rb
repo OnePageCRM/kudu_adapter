@@ -11,13 +11,13 @@ module ActiveRecord
         def exec_query(sql, _ = 'SQL', binds = [], prepare: false)
           ::Rails.logger.warn 'Prepared statements are not supported' if prepare
           # Important because of replacing ? marks and if we have replaced string with ? inside...
-          sql = sql.gsub(' ?', ' @@?')
+          sql = sql.gsub('?', '@@?')
           unless without_prepared_statement? binds
             type_casted_binds(binds).each do |bind|
               sql = sql.sub('@@?', quote(bind).to_s)
             end
           end
-          #::Rails.logger.info 'QUERY : ' + sql.to_s
+          ::Rails.logger.info 'QUERY : ' + sql.to_s
           result = connection.query sql
           columns = result.first&.keys.to_a
           rows = result.map { |row| row.fetch_values(*columns) }
